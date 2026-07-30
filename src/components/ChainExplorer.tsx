@@ -145,12 +145,20 @@ export function ChainExplorer({ initialText = "", alwaysReadClipboard = false }:
 
   const expandCurrent = () => {
     if (parsed.url === undefined) return;
+    userInteracted.current = true;
     hasAutoStarted.current = true;
     start(parsed.url, settings.mode);
   };
 
   const restartFrom = (url: string) => {
+    // Marked as interaction even though it does not go through
+    // `onSearchTextChange`: picking a history entry or restarting from a hop is
+    // the user choosing a URL, so an in-flight clipboard read must not land on
+    // top of it afterwards.
+    userInteracted.current = true;
+    setClipboardProblem(undefined);
     setSearchText(url);
+
     const target = parseInput(url).url;
     if (target !== undefined) {
       hasAutoStarted.current = true;
