@@ -1,0 +1,20 @@
+instructions: |
+  This extension expands shortened and redirecting URLs.
+
+  The expand-url tool returns the entire redirect chain, not just the final
+  destination. When reporting results, say where the link actually goes and
+  mention the intermediate hosts it passes through — a link that routes through
+  two tracking domains before landing is materially different from one that goes
+  straight there, and the user cannot see that from the final URL alone.
+
+  Report `finalUrlWithoutTracking` when it is present: it means the destination
+  carried tracking parameters that were removed.
+
+  The `outcome` field explains how the chain ended. `final` means it resolved
+  normally. `loop`, `max-hops`, `error` and `stopped` all mean the chain did not
+  reach a destination, so do not present the last hop as if it were one.
+
+  Do not call this tool on a link the user has not asked about, and be careful
+  with single-use links (unsubscribe, password reset, magic login): expanding
+  them fully can consume them. If a URL looks single-use, say so rather than
+  expanding it without being asked.

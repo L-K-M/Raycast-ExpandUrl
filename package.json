@@ -35,6 +35,133 @@
           "required": false
         }
       ]
+    },
+    {
+      "name": "expand-clipboard-url",
+      "title": "Expand URL in Clipboard",
+      "description": "Expand the URL in the clipboard and copy its final destination back.",
+      "mode": "no-view"
+    }
+  ],
+  "tools": [
+    {
+      "name": "expand-url",
+      "title": "Expand URL",
+      "description": "Expand a shortened or redirecting URL and report every hop in its redirect chain, the final destination, and any tracking parameters found along the way."
+    }
+  ],
+  "preferences": [
+    {
+      "name": "expansionMode",
+      "title": "Expansion Mode",
+      "description": "Full chain walks every redirect at once. Step by step issues exactly one request per keypress, so you can see where a link goes without following it.",
+      "type": "dropdown",
+      "required": false,
+      "default": "full",
+      "data": [
+        {
+          "title": "Full Chain",
+          "value": "full"
+        },
+        {
+          "title": "Step by Step",
+          "value": "step"
+        }
+      ]
+    },
+    {
+      "name": "autoExpandOnLaunch",
+      "title": "Automatic Expansion",
+      "label": "Expand as soon as a URL is available",
+      "description": "Start expanding as soon as a URL arrives from the argument or clipboard. Turn off to never make a request without pressing Enter.",
+      "type": "checkbox",
+      "required": false,
+      "default": true
+    },
+    {
+      "name": "readClipboard",
+      "title": "Clipboard",
+      "label": "Prefill from the clipboard",
+      "description": "Prefill the search bar when the clipboard contains a URL.",
+      "type": "checkbox",
+      "required": false,
+      "default": true
+    },
+    {
+      "name": "followMetaRefresh",
+      "title": "Meta Refresh",
+      "label": "Follow meta refresh redirects",
+      "description": "Treat a short <meta http-equiv=\"refresh\"> as a redirect. Requires downloading part of the page.",
+      "type": "checkbox",
+      "required": false,
+      "default": true
+    },
+    {
+      "name": "blockPrivateHosts",
+      "title": "Private Hosts",
+      "label": "Refuse private and loopback addresses",
+      "description": "Refuse to follow redirects into your own network or to cloud metadata endpoints. Only turn this off if you are deliberately expanding internal URLs.",
+      "type": "checkbox",
+      "required": false,
+      "default": true
+    },
+    {
+      "name": "stripAggressively",
+      "title": "Tracking Parameters",
+      "label": "Also strip contextual parameters",
+      "description": "Also treat ref, s, si, source and trk as tracking parameters. These sometimes carry meaning, so removing them can break a link.",
+      "type": "checkbox",
+      "required": false,
+      "default": false
+    },
+    {
+      "name": "userAgent",
+      "title": "User Agent",
+      "description": "Many shorteners reject unrecognised user agents. Raycast is the honest option; the browser options are the ones that work.",
+      "type": "dropdown",
+      "required": false,
+      "default": "chrome",
+      "data": [
+        {
+          "title": "Chrome",
+          "value": "chrome"
+        },
+        {
+          "title": "Safari",
+          "value": "safari"
+        },
+        {
+          "title": "Raycast Expand URL",
+          "value": "raycast"
+        }
+      ]
+    },
+    {
+      "name": "maxHops",
+      "title": "Maximum Hops",
+      "description": "Stop after this many hops. Between 1 and 100.",
+      "type": "textfield",
+      "required": false,
+      "default": "20",
+      "placeholder": "20"
+    },
+    {
+      "name": "timeoutSeconds",
+      "title": "Request Timeout",
+      "description": "Seconds to wait for each hop. Between 1 and 120.",
+      "type": "textfield",
+      "required": false,
+      "default": "10",
+      "placeholder": "10"
+    },
+    {
+      "name": "keepHistory",
+      "title": "History",
+      "label": "Remember recently expanded URLs",
+      "description": "Keep a local list of the last 15 URLs you expanded, shown when the search bar is empty. Stored on this machine only.",
+      "type": "checkbox",
+      "required": false,
+      "default": true
     }
   ],
   "dependencies": {
