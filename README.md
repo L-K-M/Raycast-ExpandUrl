@@ -22,23 +22,6 @@ parameters flagged in red.
 You can also pass a URL directly: `Expand URL https://bit.ly/xyz` from Raycast's
 root search.
 
-### Pasting a URL straight into root search
-
-Raycast matches commands by **name**, so pasting a URL into root search will not
-surface this extension on its own — no extension can opt into that, and there is
-no manifest field for it. Raycast's mechanism for it is **fallback commands**,
-which you register once:
-
-1. Paste anything into Raycast's root search so the fallback row appears at the
-   bottom (`Use "…"`).
-2. Click the **gear icon** at the right of that row — or open
-   **Settings → Extensions → Fallback Commands**.
-3. Add **Expand URL** and drag it as high up the list as you like.
-
-After that, pasting a URL and pressing `⏎` opens the chain explorer with that URL
-already loaded. The command reads Raycast's root-search text via `fallbackText`,
-so nothing else needs configuring.
-
 Launch it with an empty search bar and you get **Recently Expanded** instead of
 a blank screen — the last 15 URLs you expanded, each re-expandable with `⏎`.
 That list lives on your machine and can be cleared or switched off.
@@ -46,6 +29,44 @@ That list lives on your machine and can be cleared or switched off.
 **Expand URL in Clipboard** — the same chain explorer, but it always reads the
 clipboard, whether or not the Clipboard preference is on. Useful as a single
 named command you can bind a hotkey to.
+
+## Pasting a URL straight into root search
+
+**This needs one-off setup, and it is worth doing.** Raycast matches commands by
+**name**, so pasting a URL into root search finds nothing — the URL isn't a
+command name. No extension can opt into being matched that way; there is no
+manifest field for it. Raycast's mechanism is **fallback commands**, which you
+register yourself.
+
+What you're looking at when you paste a URL and get no results:
+
+```
+Results
+  🔗 Create Quicklink              Raycast          ← Raycast built-ins
+  🌐 Open in Browser               URL
+
+  Use "https://che01.safelinks…"                 ⚙  ← section header + the control
+  🔍 Search Files                  File Search      ← your current fallbacks
+  🗄  Store                         Raycast
+  🔵 Search Google                 Choosy
+  📋 Search Snippets               Snippets
+```
+
+The `Use "…"` line is a **section header**, not a command — the rows _beneath_
+it are your currently registered fallbacks. If `Expand URL` isn't among them, it
+simply hasn't been added yet.
+
+1. Click the **gear icon** at the right of the `Use "…"` row.
+2. Add **Expand URL**.
+3. Drag it to the top of the list so it's the first thing offered.
+
+`Expand URL` is eligible: Raycast accepts any command as a fallback except
+menu-bar commands and commands with more than one _required_ argument, and this
+one is a view command whose single `url` argument is optional.
+
+After that, paste a URL, press `⏎`, and the chain explorer opens with it already
+loaded — the command receives the root-search text as `fallbackText`, so nothing
+else needs configuring.
 
 ## Step by step vs full chain
 
