@@ -48,9 +48,13 @@ export function ChainExplorer({ initialText = "", alwaysReadClipboard = false }:
 
   const parsed = useMemo(() => parseInput(searchText), [searchText]);
 
-  // Once there is something in the search bar, the clipboard is no longer the
-  // story.
-  const clipboardNotice = searchText.trim().length === 0 ? clipboardProblem : undefined;
+  // Once the user has touched the search bar, a launch-time clipboard
+  // diagnostic is stale even if still technically true -- they have moved on
+  // from "what was on the clipboard" to "what am I typing".
+  const onSearchTextChange = (text: string) => {
+    setClipboardProblem(undefined);
+    setSearchText(text);
+  };
   const { chain, isLoading, canExpandMore, start, expandNext, expandAll, stop, reset } = expansion;
 
   useEffect(() => {
@@ -149,7 +153,7 @@ export function ChainExplorer({ initialText = "", alwaysReadClipboard = false }:
     <List
       isLoading={isLoading}
       searchText={searchText}
-      onSearchTextChange={setSearchText}
+      onSearchTextChange={onSearchTextChange}
       searchBarPlaceholder="Paste a URL to expand…"
       filtering={false}
       isShowingDetail={isShowingDetail && chain !== undefined}
@@ -225,10 +229,10 @@ export function ChainExplorer({ initialText = "", alwaysReadClipboard = false }:
         <List.EmptyView
           icon={Icon.Link}
           title={
-            clipboardNotice ?? (searchText.trim().length === 0 ? "Paste a URL to Expand" : (parsed.error ?? "Ready"))
+            clipboardProblem ?? (searchText.trim().length === 0 ? "Paste a URL to Expand" : (parsed.error ?? "Ready"))
           }
           description={
-            clipboardNotice !== undefined
+            clipboardProblem !== undefined
               ? "Copy a URL and run this command again, or paste one here."
               : searchText.trim().length === 0
                 ? "Every hop in the redirect chain stays visible and copyable."
