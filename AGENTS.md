@@ -33,10 +33,11 @@ on Node 22. All of it runs headless on Linux; only `npm run dev` needs Raycast.
 
 ```
 src/
-  expand-url.tsx            # view command — the chain explorer
-  expand-clipboard-url.ts   # no-view command — expand clipboard, copy destination
+  expand-url.tsx            # view command — seeds from argument or fallbackText
+  expand-clipboard-url.tsx  # view command — same explorer, forced clipboard read
   tools/expand-url.ts       # AI tool
-  components/               # ChainList, HopDetail, HopActions
+  components/               # ChainExplorer (shared by both commands), ChainList,
+                            #   HopDetail, HopActions
   hooks/useExpansion.ts     # drives the generator from React
   preferences.ts            # the only getPreferenceValues() call
   lib/                      # pure, Raycast-free, unit-tested
@@ -104,6 +105,22 @@ Each of these cost a debugging cycle and has a regression test. Do not
   everywhere it is used. `HopActions.tsx`'s helper emits
   `{ macOS, Windows }` so call sites are correct by construction rather than
   merely unlinted.
+
+## Raycast reachability
+
+**No manifest field makes a command reachable by pasting a URL into root
+search.** Raycast matches commands by name; arbitrary root-search text only
+reaches an extension through _fallback commands_, which the **user** registers
+(gear icon on the fallback row, or Settings → Extensions → Fallback Commands).
+`expand-url` already reads `props.fallbackText`, so it works the moment it is
+registered — but the setup step is the user's, and the README has to say so.
+
+**Neither command may collapse the chain to its destination.** The clipboard
+command was originally `no-view`: expand fully, copy the last URL, show a HUD.
+That is the behaviour `PLAN.md §1` exists to rule out, and because it was the
+command reachable by name, it quietly became the default path. Both commands now
+render `ChainExplorer`. If a future change reintroduces a one-shot mode, it must
+not be the easiest one to reach.
 
 ## Two CI traps
 

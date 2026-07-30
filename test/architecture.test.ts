@@ -94,3 +94,33 @@ describe("documentation keeps up with the manifest", () => {
     expect(undocumented, `undocumented commands: ${undocumented.join(", ")}`).toEqual([]);
   });
 });
+
+/**
+ * The design commitment in PLAN.md §1 is that the extension never collapses a
+ * chain to its destination. That was violated once already: the clipboard
+ * command shipped as `no-view`, expanding fully and copying the last URL — and
+ * because it was the command reachable by name from root search, the one thing
+ * the extension exists to avoid became the path most users would take.
+ */
+describe("no command collapses the chain", () => {
+  it("declares every command as a view", async () => {
+    const manifest = JSON.parse(await readFile(path.join(root, "package.json"), "utf8")) as {
+      commands: { name: string; mode: string }[];
+    };
+
+    const headless = manifest.commands.filter((command) => command.mode !== "view").map((command) => command.name);
+
+    expect(
+      headless,
+      `these commands cannot show a chain: ${headless.join(", ")}. A no-view command can only ` +
+        "report a destination, which is the behaviour PLAN.md rules out.",
+    ).toEqual([]);
+  });
+
+  it("routes both commands through the shared chain explorer", async () => {
+    for (const entry of ["expand-url.tsx", "expand-clipboard-url.tsx"]) {
+      const source = await readFile(path.join(root, "src", entry), "utf8");
+      expect(source, `${entry} should render ChainExplorer`).toContain("ChainExplorer");
+    }
+  });
+});
