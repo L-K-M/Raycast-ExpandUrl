@@ -44,17 +44,17 @@ So the extension is built around three commitments:
 
 ### 2.1 Commands
 
-| # | Name (manifest) | Title | Mode | Purpose |
-|---|---|---|---|---|
-| 1 | `expand-url` | Expand URL | `view` | The chain explorer. The primary experience. |
-| 2 | `expand-clipboard-url` | Expand URL in Clipboard | `no-view` | One-shot: expand the clipboard URL, copy the final URL, HUD the summary. |
+| #   | Name (manifest)        | Title                   | Mode      | Purpose                                                                  |
+| --- | ---------------------- | ----------------------- | --------- | ------------------------------------------------------------------------ |
+| 1   | `expand-url`           | Expand URL              | `view`    | The chain explorer. The primary experience.                              |
+| 2   | `expand-clipboard-url` | Expand URL in Clipboard | `no-view` | One-shot: expand the clipboard URL, copy the final URL, HUD the summary. |
 
 Command 1 takes an optional `url` argument, so `Expand URL <paste>` works
 directly from Raycast's root search. It also accepts `fallbackText`, so typing a
 URL into root search and picking the command as a fallback works.
 
-Command 2 exists because "just give me the answer" is a legitimate, *explicitly
-chosen* mode. It is a separate command precisely so the default experience never
+Command 2 exists because "just give me the answer" is a legitimate, _explicitly
+chosen_ mode. It is a separate command precisely so the default experience never
 does this implicitly.
 
 ### 2.2 Main view anatomy
@@ -94,10 +94,10 @@ interaction: launch, paste, `⏎`.
 Set by the `expansionMode` preference, overridable at runtime from the action
 panel.
 
-| Mode | Behaviour |
-|---|---|
+| Mode                     | Behaviour                                                                                                                                |
+| ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------- |
 | **Full chain** (default) | On submit, walks the chain to completion, streaming each hop into the list as it resolves. The user watches it build; nothing is hidden. |
-| **Step by step** | Resolves exactly one hop, then stops with a visible `Expand Next Step` affordance. Each `⏎` issues exactly one request. |
+| **Step by step**         | Resolves exactly one hop, then stops with a visible `Expand Next Step` affordance. Each `⏎` issues exactly one request.                  |
 
 Both modes render the identical chain UI — the only difference is who drives the
 loop. A run started in full-chain mode can be stopped (`⌘.`); a run started in
@@ -108,35 +108,39 @@ step mode can be completed in one go (`⌘⇧→`).
 Per-hop action panel, grouped into sections:
 
 **Copy**
-| Action | Shortcut |
-|---|---|
-| Copy URL | `⌘C` |
-| Copy URL Without Tracking Parameters | `⌘⇧C` |
-| Copy Final URL | `⌘⇧⏎` |
-| Copy Chain as Markdown | `⌘⇧M` |
-| Copy Chain as Plain Text | `⌘⇧T` |
-| Paste URL to Active App | `⌘V` |
+
+| Action                               | Shortcut |
+| ------------------------------------ | -------- |
+| Copy URL                             | `⌘C`     |
+| Copy URL Without Tracking Parameters | `⌘⇧C`    |
+| Copy Final URL                       | `⌘⇧⏎`    |
+| Copy Chain as Markdown               | `⌘⇧M`    |
+| Copy Chain as Plain Text             | `⌘⇧T`    |
+| Paste URL to Active App              | `⌘V`     |
 
 **Expand**
-| Action | Shortcut |
-|---|---|
-| Expand Next Step | `⏎` (step mode, when pending) |
-| Expand All Remaining | `⌘⇧→` |
-| Stop Expanding | `⌘.` |
-| Restart From This Hop | `⌘R` |
+
+| Action                | Shortcut                      |
+| --------------------- | ----------------------------- |
+| Expand Next Step      | `⏎` (step mode, when pending) |
+| Expand All Remaining  | `⌘⇧→`                         |
+| Stop Expanding        | `⌘.`                          |
+| Restart From This Hop | `⌘R`                          |
 
 **Open**
-| Action | Shortcut |
-|---|---|
-| Open in Browser | `⌘O` |
-| Open Without Tracking Parameters | `⌘⇧O` |
-| Create Quicklink | — |
+
+| Action                           | Shortcut |
+| -------------------------------- | -------- |
+| Open in Browser                  | `⌘O`     |
+| Open Without Tracking Parameters | `⌘⇧O`    |
+| Create Quicklink                 | —        |
 
 **View**
-| Action | Shortcut |
-|---|---|
-| Toggle Details | `⌘Y` |
-| Clear History | `⌃⇧X` |
+
+| Action         | Shortcut |
+| -------------- | -------- |
+| Toggle Details | `⌘Y`     |
+| Clear History  | `⌃⇧X`    |
 
 `Copy URL` is deliberately the primary (`⏎`-adjacent) action on a resolved hop,
 because copying an intermediate URL is the whole point of the extension.
@@ -155,18 +159,18 @@ because copying an intermediate URL is the whole point of the extension.
 
 ### 2.6 Preferences
 
-| Name | Type | Default | Rationale |
-|---|---|---|---|
-| `expansionMode` | dropdown (`full`, `step`) | `full` | Section 2.3 |
-| `autoExpandOnLaunch` | checkbox | `true` | When a URL arrives via argument/clipboard, start immediately. Off = never touch the network unprompted. |
-| `readClipboard` | checkbox | `true` | Prefill the search bar from the clipboard. Privacy opt-out. |
-| `maxHops` | textfield | `20` | Runaway/loop guard. |
-| `timeoutMs` | textfield | `10000` | Per-request timeout. |
-| `userAgent` | dropdown (`chrome`, `safari`, `raycast`) | `chrome` | Many shorteners 403 unknown agents. Section 3.6. |
-| `followMetaRefresh` | checkbox | `true` | Section 3.4. |
-| `blockPrivateHosts` | checkbox | `true` | Section 3.7. |
-| `stripAggressively` | checkbox | `false` | Section 3.5. |
-| `keepHistory` | checkbox | `true` | Privacy opt-out. |
+| Name                 | Type                                     | Default  | Rationale                                                                                               |
+| -------------------- | ---------------------------------------- | -------- | ------------------------------------------------------------------------------------------------------- |
+| `expansionMode`      | dropdown (`full`, `step`)                | `full`   | Section 2.3                                                                                             |
+| `autoExpandOnLaunch` | checkbox                                 | `true`   | When a URL arrives via argument/clipboard, start immediately. Off = never touch the network unprompted. |
+| `readClipboard`      | checkbox                                 | `true`   | Prefill the search bar from the clipboard. Privacy opt-out.                                             |
+| `maxHops`            | textfield                                | `20`     | Runaway/loop guard.                                                                                     |
+| `timeoutMs`          | textfield                                | `10000`  | Per-request timeout.                                                                                    |
+| `userAgent`          | dropdown (`chrome`, `safari`, `raycast`) | `chrome` | Many shorteners 403 unknown agents. Section 3.6.                                                        |
+| `followMetaRefresh`  | checkbox                                 | `true`   | Section 3.4.                                                                                            |
+| `blockPrivateHosts`  | checkbox                                 | `true`   | Section 3.7.                                                                                            |
+| `stripAggressively`  | checkbox                                 | `false`  | Section 3.5.                                                                                            |
+| `keepHistory`        | checkbox                                 | `true`   | Privacy opt-out.                                                                                        |
 
 ---
 
@@ -213,27 +217,27 @@ export type HopVia = "start" | "http" | "meta-refresh";
 export interface Hop {
   index: number;
   url: string;
-  via: HopVia;              // how we arrived at this URL
-  status?: number;          // HTTP status of the response for this URL
+  via: HopVia; // how we arrived at this URL
+  status?: number; // HTTP status of the response for this URL
   statusText?: string;
   method?: "HEAD" | "GET";
   contentType?: string;
   server?: string;
   elapsedMs?: number;
-  documentTitle?: string;   // terminal HTML hops only
+  documentTitle?: string; // terminal HTML hops only
   trackingParams?: string[];
-  error?: string;           // this hop failed; chain stops here
+  error?: string; // this hop failed; chain stops here
 }
 
 export type ChainStatus =
-  | "idle"      // nothing requested yet
-  | "running"   // a request is in flight
-  | "paused"    // step mode, a next hop exists and awaits the user
-  | "final"     // terminal response reached
-  | "max-hops"  // stopped at maxHops
-  | "loop"      // a URL repeated
-  | "stopped"   // user cancelled
-  | "error";    // last hop failed
+  | "idle" // nothing requested yet
+  | "running" // a request is in flight
+  | "paused" // step mode, a next hop exists and awaits the user
+  | "final" // terminal response reached
+  | "max-hops" // stopped at maxHops
+  | "loop" // a URL repeated
+  | "stopped" // user cancelled
+  | "error"; // last hop failed
 
 export interface Chain {
   source: string;
@@ -255,7 +259,7 @@ Three properties make this the right primitive here:
   built-in one.
 - It does not follow redirects at all, so "do not follow redirects" is the
   default rather than an opt-out we could forget.
-- The response is a stream we own, so we can stop reading after *n* bytes and
+- The response is a stream we own, so we can stop reading after _n_ bytes and
   destroy the socket rather than buffering a whole response.
 
 Bodies are requested with `Accept-Encoding: identity`; if a server compresses
@@ -281,7 +285,7 @@ parsing.
    (delay ≤ `metaRefreshMaxDelay`, default 5 s) and `<title>`. A qualifying
    refresh yields `via: "meta-refresh"`.
 6. **Anything else** (2xx without refresh, 4xx, 5xx) → terminal. 4xx/5xx are
-   *reported*, not treated as failures: "hop 3 returns 404" is a useful answer.
+   _reported_, not treated as failures: "hop 3 returns 404" is a useful answer.
 
 `expandChain()` is an **async generator** yielding a fresh `Chain` snapshot after
 each hop. The UI re-renders per yield, which is what produces the streaming
@@ -321,7 +325,7 @@ cookies stored.
 ### 3.7 Safety guards
 
 The extension follows **attacker-controllable** redirects: the target of hop
-*n+1* is chosen by whoever controls hop *n*. That makes this an SSRF engine
+_n+1_ is chosen by whoever controls hop _n_. That makes this an SSRF engine
 unless it is guarded deliberately. Guards live in `guards.ts`.
 
 **Scheme allow-list.** `http:` and `https:` only. A redirect to
@@ -339,11 +343,11 @@ and a private address is not a host we want to talk to).
 Rejected ranges, evaluated against the **parsed binary address**, never against
 its string form:
 
-| Family | Blocked |
-|---|---|
-| IPv4 | `0.0.0.0/8`, `10/8`, `100.64/10` (CGNAT), `127/8`, `169.254/16` (link-local, incl. cloud metadata), `172.16/12`, `192.0.0/24`, `192.168/16`, `198.18/15`, multicast `224/4`, reserved `240/4` |
-| IPv6 | `::`, `::1`, `fc00::/7` (ULA), `fe80::/10` (link-local), `ff00::/8` (multicast) |
-| IPv6 embedding IPv4 | `::ffff:a.b.c.d` (IPv4-mapped), `64:ff9b::/96` (NAT64), and `2002::/16` (6to4) are **unwrapped to their embedded IPv4 address and re-checked against the IPv4 table** |
+| Family              | Blocked                                                                                                                                                                                       |
+| ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| IPv4                | `0.0.0.0/8`, `10/8`, `100.64/10` (CGNAT), `127/8`, `169.254/16` (link-local, incl. cloud metadata), `172.16/12`, `192.0.0/24`, `192.168/16`, `198.18/15`, multicast `224/4`, reserved `240/4` |
+| IPv6                | `::`, `::1`, `fc00::/7` (ULA), `fe80::/10` (link-local), `ff00::/8` (multicast)                                                                                                               |
+| IPv6 embedding IPv4 | `::ffff:a.b.c.d` (IPv4-mapped), `64:ff9b::/96` (NAT64), and `2002::/16` (6to4) are **unwrapped to their embedded IPv4 address and re-checked against the IPv4 table**                         |
 
 The IPv4-mapped case deserves its own note because it is the easy one to get
 wrong: `new URL("http://[::ffff:127.0.0.1]/")` yields hostname
@@ -365,25 +369,43 @@ empty host are rejected before any resolution is attempted.
 loop detection on normalised URLs.
 
 **No credential forwarding.** `Authorization` and `Cookie` are never set, so
-hop *n+1* receives nothing from hop *n*.
+hop _n+1_ receives nothing from hop _n_.
 
 ### 3.8 Toolchain
 
 Verified working headless on Linux CI (`@raycast/api` ships a `linux-x64` `ray`
 binary; neither `lint` nor `build` requires the Raycast app or a login):
 
-| Script | Command |
-|---|---|
-| `dev` | `ray develop` |
-| `build` | `ray build -e dist` |
-| `lint` | `ray lint` |
-| `fix-lint` | `ray lint --fix` |
-| `typecheck` | `tsc --noEmit` |
-| `test` | `vitest run` |
-| `format` | `prettier --check .` |
+| Script      | Command              |
+| ----------- | -------------------- |
+| `dev`       | `ray develop`        |
+| `build`     | `ray build -e dist`  |
+| `lint`      | `ray lint`           |
+| `fix-lint`  | `ray lint --fix`     |
+| `typecheck` | `tsc --noEmit`       |
+| `test`      | `vitest run`         |
+| `format`    | `prettier --check .` |
 
 ESLint 9 flat config (`eslint.config.mjs`) extending `@raycast/eslint-config`;
-Prettier 3; TypeScript 5 `strict`.
+Prettier 3; TypeScript 5 `strict` (TypeScript 7 is outside
+`@raycast/eslint-config`'s supported peer range of `>=4.8.4 <6.1.0`).
+
+**Licensing and `--relaxed` lint.** The project ships under the Unlicense, but
+`ray lint` hard-requires `"license": "MIT"` and fails the manifest check
+otherwise. The project keeps the Unlicense and runs `ray lint --relaxed`, which
+skips validation of the package.json schema, the icons and the store metadata —
+ESLint and Prettier still run in full. To stop that from silently weakening the
+build, `test/manifest.test.ts` re-implements the dropped checks: URL-safe
+extension name, known categories and platforms, valid command modes and
+argument types, an entry point on disk for every declared command and tool, no
+subtitle that merely repeats its title, and a genuinely 512×512 PNG icon (read
+out of the IHDR chunk, not merely present on disk). The practical consequence is
+that the extension is not submittable to the Raycast Store as-is; relicensing to
+MIT is the only thing standing in the way, and that is the owner's call.
+
+`raycast-env.d.ts` is generated from the manifest by `ray build` and is
+committed, so `tsc --noEmit` works standalone. CI regenerates it and fails on a
+diff, so it cannot drift from the manifest.
 
 ### 3.9 CI/CD
 
@@ -409,16 +431,16 @@ placeholder images.
 
 One PR per step, against `main`, each awaiting GLM review before merge.
 
-| PR | Scope | Definition of done |
-|---|---|---|
-| 1 | **This plan** | `PLAN.md` merged. |
-| 2 | **Scaffolding & CI** | Manifest, tsconfig, ESLint/Prettier, generated 512×512 icon, vitest, CI workflow, a command that renders. `lint`+`build`+`test` green. |
-| 3 | **Expansion engine** | `lib/{types,url,tracking,html,guards,transport,expand,format}.ts` + thorough vitest suite against a local `http.Server`, including regression tests for every blocked IP range and for the IPv4-mapped IPv6 and bracketed-hostname forms in §3.7. No UI change. |
-| 4 | **Chain view** | `expand-url` command: streaming full-chain expansion, chain list, detail metadata, copy/open actions. |
-| 5 | **Step mode & preferences** | Step-by-step expansion, runtime mode toggle, stop/restart, all preferences wired and validated. |
-| 6 | **Clipboard command & history** | `expand-clipboard-url`, `LocalStorage` recents in the empty state. |
-| 7 | **AI tool** | `src/tools/expand-url.ts` + `ai.yaml`, so Raycast AI can expand URLs and report chains. |
-| 8 | **Docs & collaterals** | `README.md` (users), `AGENTS.md` (LLMs), `CHANGELOG.md` (store format), `metadata/README.md`, release workflow, dependabot, PR template. |
+| PR  | Scope                           | Definition of done                                                                                                                                                                                                                                              |
+| --- | ------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | **This plan**                   | `PLAN.md` merged.                                                                                                                                                                                                                                               |
+| 2   | **Scaffolding & CI**            | Manifest, tsconfig, ESLint/Prettier, generated 512×512 icon, vitest, CI workflow, a command that renders. `lint`+`build`+`test` green.                                                                                                                          |
+| 3   | **Expansion engine**            | `lib/{types,url,tracking,html,guards,transport,expand,format}.ts` + thorough vitest suite against a local `http.Server`, including regression tests for every blocked IP range and for the IPv4-mapped IPv6 and bracketed-hostname forms in §3.7. No UI change. |
+| 4   | **Chain view**                  | `expand-url` command: streaming full-chain expansion, chain list, detail metadata, copy/open actions.                                                                                                                                                           |
+| 5   | **Step mode & preferences**     | Step-by-step expansion, runtime mode toggle, stop/restart, all preferences wired and validated.                                                                                                                                                                 |
+| 6   | **Clipboard command & history** | `expand-clipboard-url`, `LocalStorage` recents in the empty state.                                                                                                                                                                                              |
+| 7   | **AI tool**                     | `src/tools/expand-url.ts` + `ai.yaml`, so Raycast AI can expand URLs and report chains.                                                                                                                                                                         |
+| 8   | **Docs & collaterals**          | `README.md` (users), `AGENTS.md` (LLMs), `CHANGELOG.md` (store format), `metadata/README.md`, release workflow, dependabot, PR template.                                                                                                                        |
 
 Adjacent steps may be combined if reviews are consistently clean; steps will be
 split further if a review surfaces enough work to warrant it.
