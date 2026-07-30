@@ -15,5 +15,6 @@
   resolving relative and protocol-relative targets
 - Refuses redirects to loopback, private, link-local and cloud-metadata
   addresses, checked at connect time
-- `Expand URL in Clipboard` command for one-shot expansion
+- `Expand URL in Clipboard` command, showing the same chain for whatever URL
+  is on the clipboard
 - AI tool so Raycast AI can expand a URL and report its chain

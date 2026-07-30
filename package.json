@@ -39,8 +39,8 @@
     {
       "name": "expand-clipboard-url",
       "title": "Expand URL in Clipboard",
-      "description": "Expand the URL in the clipboard and copy its final destination back.",
-      "mode": "no-view"
+      "description": "Expand the URL in the clipboard and inspect every hop in its redirect chain.",
+      "mode": "view"
     }
   ],
   "tools": [
