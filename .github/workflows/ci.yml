@@ -4,6 +4,11 @@ on:
   push:
     branches: [main]
   pull_request:
+  # Manual trigger. GitHub occasionally does not raise a `synchronize` event for
+  # a push to a pull request branch, which leaves the head commit with no CI run
+  # and no way to ask for one; this makes that recoverable without pushing an
+  # empty commit to provoke it.
+  workflow_dispatch:
 
 permissions:
   contents: read
