@@ -45,6 +45,14 @@ export function ChainExplorer({ initialText = "", alwaysReadClipboard = false }:
   /** Guards the one-shot seed-and-autostart so a re-render cannot repeat it. */
   const hasSeeded = useRef(initialText.length > 0);
   const hasAutoStarted = useRef(false);
+  /**
+   * Whether the user has typed anything yet.
+   *
+   * Reading the clipboard is asynchronous, so a fast typist can start before it
+   * resolves. Once they have, the clipboard is stale input and must not
+   * overwrite what they are writing.
+   */
+  const userInteracted = useRef(false);
 
   const parsed = useMemo(() => parseInput(searchText), [searchText]);
 
@@ -52,6 +60,7 @@ export function ChainExplorer({ initialText = "", alwaysReadClipboard = false }:
   // diagnostic is stale even if still technically true -- they have moved on
   // from "what was on the clipboard" to "what am I typing".
   const onSearchTextChange = (text: string) => {
+    userInteracted.current = true;
     setClipboardProblem(undefined);
     setSearchText(text);
   };
@@ -76,24 +85,40 @@ export function ChainExplorer({ initialText = "", alwaysReadClipboard = false }:
     let cancelled = false;
     let completed = false;
 
-    void Clipboard.readText().then((text) => {
-      if (cancelled) return;
-      completed = true;
-      // parseInput trims internally, but trimming once here keeps the checked
-      // value and the stored value visibly the same thing.
-      const trimmed = (text ?? "").trim();
+    void Clipboard.readText()
+      .then((text) => {
+        // Order matters. `cancelled` leaves `completed` false so the cleanup
+        // releases the retry guard -- that is the Strict Mode path below.
+        // `userInteracted` does not: the read genuinely landed, and retrying
+        // after the user has started typing is exactly what we want to avoid.
+        if (cancelled) return;
+        completed = true;
+        if (userInteracted.current) return;
+        // parseInput trims internally, but trimming once here keeps the checked
+        // value and the stored value visibly the same thing.
+        const trimmed = (text ?? "").trim();
 
-      if (parseInput(trimmed).url !== undefined) {
-        setSearchText(trimmed);
-        return;
-      }
+        if (parseInput(trimmed).url !== undefined) {
+          setSearchText(trimmed);
+          return;
+        }
 
-      // Running "Expand URL in Clipboard" and getting a blank screen reads as a
-      // broken extension rather than an empty clipboard, so say which it was.
-      if (alwaysReadClipboard) {
-        setClipboardProblem(trimmed.length === 0 ? "Clipboard Is Empty" : "No URL in the Clipboard");
-      }
-    });
+        // Running "Expand URL in Clipboard" and getting a blank screen reads as
+        // a broken extension rather than an empty clipboard, so say which.
+        if (alwaysReadClipboard) {
+          setClipboardProblem(trimmed.length === 0 ? "Clipboard Is Empty" : "No URL in the Clipboard");
+        }
+      })
+      .catch(() => {
+        // Without this the rejection is unhandled and the clipboard command
+        // shows a blank screen with no indication that anything was attempted.
+        if (cancelled) return;
+        completed = true;
+        if (userInteracted.current) return;
+        if (alwaysReadClipboard) {
+          setClipboardProblem("Could Not Read the Clipboard");
+        }
+      });
     return () => {
       cancelled = true;
       // Release the once-only guard if the read never landed, so a re-mounted
