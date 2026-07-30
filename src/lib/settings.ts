@@ -81,9 +81,10 @@ function readNumber(raw: string | undefined, spec: NumberSpec, warnings: string[
 }
 
 /**
- * Booleans are read as "not explicitly false" so that a preference Raycast has
- * not populated yet keeps its documented default rather than silently becoming
- * off.
+ * Returns the value Raycast supplied, including an explicit `false`, and falls
+ * back to the documented default only when the preference is `undefined` --
+ * which is what a preference Raycast has not populated yet looks like. Without
+ * the fallback those silently read as off.
  */
 function readBoolean(raw: boolean | undefined, fallback: boolean): boolean {
   if (raw === undefined) return fallback;

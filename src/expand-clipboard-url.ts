@@ -53,5 +53,14 @@ export default async function Command() {
     chain.status === "final" ? undefined : describeChainStatus(chain),
   ].filter((part) => part !== undefined);
 
-  await showHUD(`📋 ${new URL(url).hostname} · ${parts.join(" · ")}`);
+  // This is the command's only output. A throw here would replace the whole
+  // result with a generic Raycast error, so fall back to the raw URL.
+  let hostname = url;
+  try {
+    hostname = new URL(url).hostname;
+  } catch {
+    hostname = url;
+  }
+
+  await showHUD(`📋 ${hostname} · ${parts.join(" · ")}`);
 }
