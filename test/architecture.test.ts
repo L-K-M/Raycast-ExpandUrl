@@ -132,7 +132,10 @@ describe("no command collapses the chain", () => {
 
       expect(entry, `no entry point on disk for command "${name}"`).toBeDefined();
       const source = await readFile(entry as string, "utf8");
-      expect(source, `${name} should render ChainExplorer`).toContain("ChainExplorer");
+      // Match the JSX tag, not the identifier: `toContain("ChainExplorer")`
+      // is satisfied by the import alone, so removing the render and leaving a
+      // stale import would have passed.
+      expect(source, `${name} should render <ChainExplorer />`).toMatch(/<ChainExplorer[\s/>]/);
     }
   });
 });
