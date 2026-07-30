@@ -70,6 +70,9 @@ export function useExpansion(options: ExpandOptions): Expansion {
         if (id !== runId.current || !mounted.current) return;
 
         const snapshot = step.value;
+        // A completed generator yields `undefined`; rendering that would wipe
+        // the chain the user is looking at.
+        if (snapshot === undefined) return;
         setChain(snapshot);
 
         if (step.done === true || isTerminal(snapshot.status)) return;
@@ -89,6 +92,13 @@ export function useExpansion(options: ExpandOptions): Expansion {
       // as a failure. Reading `controller.current` is correct here because it
       // and `runId` are replaced together, so it belongs to the run this branch
       // has just confirmed is still current.
+      if (id === runId.current) {
+        // A generator that threw is finished. Leaving it in place lets
+        // "Expand Next Step" call next() on a corpse, which returns
+        // { value: undefined, done: true } and would blank the chain. Clearing
+        // it makes resume() a no-op instead.
+        generator.current = undefined;
+      }
       if (id === runId.current && mounted.current && controller.current?.signal.aborted !== true) {
         void showFailureToast(error, { title: "Expansion failed" });
       }
