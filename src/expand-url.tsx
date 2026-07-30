@@ -50,8 +50,11 @@ export default function Command(props: LaunchProps<{ arguments: Arguments.Expand
     let cancelled = false;
     void Clipboard.readText().then((text) => {
       if (cancelled || text === undefined) return;
-      if (parseInput(text).url === undefined) return;
-      setSearchText(text.trim());
+      // parseInput trims internally, but trimming once here keeps the checked
+      // value and the stored value visibly the same thing.
+      const trimmed = text.trim();
+      if (parseInput(trimmed).url === undefined) return;
+      setSearchText(trimmed);
     });
     return () => {
       cancelled = true;

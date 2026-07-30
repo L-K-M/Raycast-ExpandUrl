@@ -138,6 +138,11 @@ cannot, and there is a test pinning that.
 
 ## Publishing
 
+`CHANGELOG.md`'s `{PR_MERGE_DATE}` is deliberate, not an unsubstituted
+template. It is the Raycast Store convention: their CI replaces it with the
+real date when an extension pull request merges into `raycast/extensions`.
+Replacing it with a hardcoded date would be the mistake.
+
 `ray publish` needs an interactive Raycast login and cannot run in CI, so it is
 a manual step. Before it would succeed: relicense to MIT, confirm `author`
 matches the owner's Raycast username, and add the store screenshots described in

@@ -30,7 +30,19 @@ export default async function Command() {
     message: parsed.url.hostname,
   });
 
-  const chain = await expandFully(parsed.url, settings.expandOptions);
+  // expandFully turns failures into hops rather than throwing, so this should
+  // not fire -- but an animated toast left spinning forever is a bad enough
+  // failure mode to be worth guarding a no-view command's only feedback with.
+  let chain;
+  try {
+    chain = await expandFully(parsed.url, settings.expandOptions);
+  } catch (error) {
+    toast.style = Toast.Style.Failure;
+    toast.title = "Could not expand";
+    toast.message = error instanceof Error ? error.message : "Unexpected error";
+    return;
+  }
+
   const destination = finalHop(chain);
 
   if (destination === undefined || chain.status === "error") {

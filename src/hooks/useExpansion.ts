@@ -81,7 +81,15 @@ export function useExpansion(options: ExpandOptions): Expansion {
       // The engine turns network failures into hops rather than throwing, so
       // reaching here means something unexpected broke. Surface it instead of
       // leaving a spinner running forever.
-      if (id === runId.current && mounted.current) {
+      //
+      // The abort check is defensive rather than load-bearing: expandChain
+      // currently absorbs a cancellation into a "stopped" chain and never
+      // throws, so this catch is not reached by stop(). Should that ever
+      // change, the guard keeps a deliberate cancellation from being reported
+      // as a failure. Reading `controller.current` is correct here because it
+      // and `runId` are replaced together, so it belongs to the run this branch
+      // has just confirmed is still current.
+      if (id === runId.current && mounted.current && controller.current?.signal.aborted !== true) {
         void showFailureToast(error, { title: "Expansion failed" });
       }
     } finally {
