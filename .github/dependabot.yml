@@ -1,0 +1,25 @@
+version: 2
+
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      dev-dependencies:
+        dependency-type: development
+    ignore:
+      # Exact peer dependencies of @raycast/api. Bumping either independently
+      # produces a peer conflict, so they move when @raycast/api moves.
+      - dependency-name: "@types/node"
+      - dependency-name: "@types/react"
+      # @raycast/eslint-config supports >=4.8.4 <6.1.0, so a major bump breaks
+      # linting rather than improving anything.
+      - dependency-name: typescript
+        update-types: [version-update:semver-major]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly

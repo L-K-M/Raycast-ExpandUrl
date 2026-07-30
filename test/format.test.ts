@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  chainOutcome,
   chainToMarkdown,
   chainToText,
   countTrackingParams,
@@ -7,6 +8,7 @@ import {
   describeStatus,
   describeVia,
   finalHop,
+  OUTCOME_LABELS,
 } from "../src/lib/format";
 import type { Chain, Hop } from "../src/lib/types";
 
@@ -153,5 +155,35 @@ describe("chainToMarkdown", () => {
   it("wraps URLs in angle brackets so trackers do not break the link", () => {
     // Bare Markdown autolinks mangle URLs containing underscores or parens.
     expect(chainToMarkdown(chain)).toContain("<https://example.com/a?utm_source=x>");
+  });
+});
+
+/**
+ * Regression tests for a shipped bug: the last row of a chain was labelled
+ * "Final" purely because it was last, so a chain that hit a loop or the hop
+ * limit showed a green "Final" tag directly under a summary reading "redirect
+ * loop". Position is not an ending.
+ */
+describe("chainOutcome", () => {
+  it.each(["final", "loop", "max-hops", "stopped", "error"] as const)("treats %s as an ending", (status) => {
+    expect(chainOutcome(status)).toBe(status);
+  });
+
+  it.each(["idle", "running", "paused"] as const)("does not treat %s as an ending", (status) => {
+    // A paused chain has a last row, but it is not where the chain ended.
+    expect(chainOutcome(status)).toBeUndefined();
+  });
+
+  it("only calls an ending Final when the chain actually resolved", () => {
+    expect(OUTCOME_LABELS[chainOutcome("final") as "final"]).toBe("Final");
+    for (const status of ["loop", "max-hops", "stopped", "error"] as const) {
+      expect(OUTCOME_LABELS[status]).not.toBe("Final");
+    }
+  });
+
+  it("labels every ending", () => {
+    for (const status of ["final", "loop", "max-hops", "stopped", "error"] as const) {
+      expect(OUTCOME_LABELS[status].length).toBeGreaterThan(0);
+    }
   });
 });

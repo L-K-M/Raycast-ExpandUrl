@@ -1,4 +1,4 @@
-import type { Chain, Hop } from "./types";
+import { isTerminal, type Chain, type ChainStatus, type Hop } from "./types";
 
 /** Human-readable label for how a hop was reached. */
 export function describeVia(hop: Hop): string {
@@ -92,3 +92,24 @@ export function chainToMarkdown(chain: Chain): string {
     `_${describeChainStatus(chain)}_`,
   ].join("\n");
 }
+
+/**
+ * The statuses that mean the chain stopped growing. Distinct from "the last row
+ * of the list": a chain that hit a loop, ran out of hops or was stopped also has
+ * a last row, and labelling that row "Final" contradicts the summary sitting
+ * above it. Position tells you where a row is; this tells you what it means.
+ */
+export type ChainOutcome = Extract<ChainStatus, "final" | "loop" | "max-hops" | "stopped" | "error">;
+
+/** The chain's ending, or undefined while it may still grow. */
+export function chainOutcome(status: ChainStatus): ChainOutcome | undefined {
+  return isTerminal(status) ? (status as ChainOutcome) : undefined;
+}
+
+export const OUTCOME_LABELS: Record<ChainOutcome, string> = {
+  final: "Final",
+  loop: "Loop",
+  "max-hops": "Hop limit",
+  stopped: "Stopped",
+  error: "Failed",
+};

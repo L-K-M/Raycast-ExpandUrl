@@ -444,3 +444,23 @@ One PR per step, against `main`, each awaiting GLM review before merge.
 
 Adjacent steps may be combined if reviews are consistently clean; steps will be
 split further if a review surfaces enough work to warrant it.
+
+### What actually shipped
+
+Steps 1–3 landed as their own pull requests. **Steps 4–8 were combined into a
+single pull request**, for two reasons worth recording rather than glossing:
+
+- Splitting 4 from 5 would have meant writing the step-mode plumbing twice. The
+  hook that drives the generator serves both modes by construction (§3.4), so
+  "chain view" and "step mode" are not separable units of work — the seam the
+  plan drew between them does not exist in the code.
+- Steps 6–8 are additive and touch disjoint files, so reviewing them together
+  costs nothing over reviewing them apart.
+
+Two things were also learned the hard way and are recorded in `AGENTS.md`:
+a pull request in `mergeable_state: dirty` silently skips `pull_request`
+workflows (GitHub cannot compute `refs/pull/N/merge`) while `pull_request_target`
+keeps running, which looks exactly like a healthy PR with one check in flight;
+and `@raycast/no-ambiguous-platform-shortcut` only inspects inline object
+literals, so a shortcut-building helper suppresses it repo-wide unless the
+helper itself emits platform-specific shortcuts.
