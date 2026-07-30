@@ -22,13 +22,30 @@ parameters flagged in red.
 You can also pass a URL directly: `Expand URL https://bit.ly/xyz` from Raycast's
 root search.
 
+### Pasting a URL straight into root search
+
+Raycast matches commands by **name**, so pasting a URL into root search will not
+surface this extension on its own — no extension can opt into that, and there is
+no manifest field for it. Raycast's mechanism for it is **fallback commands**,
+which you register once:
+
+1. Paste anything into Raycast's root search so the fallback row appears at the
+   bottom (`Use "…"`).
+2. Click the **gear icon** at the right of that row — or open
+   **Settings → Extensions → Fallback Commands**.
+3. Add **Expand URL** and drag it as high up the list as you like.
+
+After that, pasting a URL and pressing `⏎` opens the chain explorer with that URL
+already loaded. The command reads Raycast's root-search text via `fallbackText`,
+so nothing else needs configuring.
+
 Launch it with an empty search bar and you get **Recently Expanded** instead of
 a blank screen — the last 15 URLs you expanded, each re-expandable with `⏎`.
 That list lives on your machine and can be cleared or switched off.
 
-**Expand URL in Clipboard** — the shortcut for when you only want the answer.
-Expands whatever URL is on the clipboard, copies the destination back, and
-reports what happened in a HUD.
+**Expand URL in Clipboard** — the same chain explorer, but it always reads the
+clipboard, whether or not the Clipboard preference is on. Useful as a single
+named command you can bind a hotkey to.
 
 ## Step by step vs full chain
 
