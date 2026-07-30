@@ -4,6 +4,11 @@ on:
   push:
     branches: [main]
   pull_request:
+  # Manual trigger. GitHub occasionally does not raise a `synchronize` event for
+  # a push to a pull request branch, which leaves the head commit with no CI run
+  # and no way to ask for one; this makes that recoverable without pushing an
+  # empty commit to provoke it.
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -31,8 +36,10 @@ jobs:
       - name: Check formatting
         run: npm run format:check
 
-      # `ray lint` validates the extension manifest and icons in addition to
-      # running ESLint, so it catches manifest breakage that tsc never sees.
+      # `--relaxed` because ray lint hard-requires an MIT license and this
+      # project is Unlicense. That also switches off manifest, icon and store
+      # metadata validation, which test/manifest.test.ts re-implements; ESLint
+      # and Prettier still run in full here.
       - name: Lint
         run: npm run lint
 
