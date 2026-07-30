@@ -24,7 +24,15 @@ const ALLOWED_PROTOCOLS = new Set(["http:", "https:"]);
  * asking DNS what they mean.
  */
 const BLOCKED_HOSTNAME_SUFFIXES = [".localhost", ".local", ".internal", ".home.arpa"];
-const BLOCKED_HOSTNAMES = new Set(["localhost", "ip6-localhost", "ip6-loopback"]);
+const BLOCKED_HOSTNAMES = new Set([
+  "localhost",
+  "ip6-localhost",
+  "ip6-loopback",
+  // Single-label forms; the suffix list above only catches "foo.local".
+  "local",
+  "internal",
+  "home.arpa",
+]);
 
 /**
  * Address ranges we refuse to connect to.
@@ -60,6 +68,13 @@ function buildBlockList(): net.BlockList {
   list.addSubnet("fc00::", 7, "ipv6");
   list.addSubnet("fe80::", 10, "ipv6");
   list.addSubnet("ff00::", 8, "ipv6");
+
+  // IPv4-compatible IPv6 (::a.b.c.d), deprecated by RFC 4291. BlockList unwraps
+  // the *mapped* form (::ffff:a.b.c.d) but not this older one, so ::127.0.0.1 --
+  // which new URL() spells [::7f00:1] -- matched no rule at all. Blocking the
+  // whole ::/96 range closes it; the range is deprecated and non-routable, and
+  // it does not overlap ::ffff:0:0/96, so mapped public addresses are unaffected.
+  list.addSubnet("::", 96, "ipv6");
 
   // BlockList unwraps IPv4-mapped IPv6, but not these two transition formats,
   // which also embed an IPv4 address. Rather than hand-decode the embedded

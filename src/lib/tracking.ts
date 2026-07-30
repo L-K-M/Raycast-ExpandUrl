@@ -29,10 +29,11 @@ const CONSERVATIVE_EXACT = new Set([
   "wbraid",
   "wickedid",
   "yclid",
+  "vmcid",
   "ysclid",
 ]);
 
-const CONSERVATIVE_PREFIXES = ["utm_", "oly_", "at_custom", "pk_", "piwik_", "matomo_", "hsa_", "vmcid"];
+const CONSERVATIVE_PREFIXES = ["utm_", "oly_", "at_custom", "pk_", "piwik_", "matomo_", "hsa_"];
 
 /**
  * Contextual parameters. Frequently tracking, but sometimes load-bearing —

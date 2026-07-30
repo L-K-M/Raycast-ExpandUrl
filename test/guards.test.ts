@@ -83,6 +83,36 @@ describe("checkAddress", () => {
   });
 
   /**
+   * The *compatible* form `::a.b.c.d` is not the *mapped* form `::ffff:a.b.c.d`,
+   * and BlockList only unwraps the latter. `http://[::127.0.0.1]/` parses to
+   * hostname `[::7f00:1]`, which matched no rule at all until ::/96 was blocked.
+   */
+  describe("IPv4-compatible IPv6", () => {
+    it.each([
+      "::127.0.0.1",
+      "::7f00:1", // the same address, as new URL() spells it
+      "::10.0.0.1",
+      "::169.254.169.254",
+      "::a9fe:a9fe",
+    ])("blocks %s", (address) => {
+      expect(checkAddress(address)).toBeDefined();
+    });
+
+    it("blocks the form new URL() actually produces", () => {
+      const hostname = new URL("http://[::127.0.0.1]/").hostname;
+      expect(hostname).toBe("[::7f00:1]");
+      expect(checkHostname(hostname)).toBeDefined();
+    });
+
+    it("does not disturb mapped public addresses", () => {
+      // ::/96 and ::ffff:0:0/96 are distinct ranges; blocking one must not
+      // catch the other.
+      expect(checkAddress("::ffff:8.8.8.8")).toBeUndefined();
+      expect(checkAddress("2606:4700:4700::1111")).toBeUndefined();
+    });
+  });
+
+  /**
    * NAT64 and 6to4 also embed an IPv4 address, and BlockList does not unwrap
    * them. Both prefixes are refused outright instead.
    */
@@ -106,6 +136,11 @@ describe("checkHostname", () => {
       expect(checkHostname(hostname)).toBeDefined();
     },
   );
+
+  it.each(["local", "internal", "home.arpa"])("blocks the bare single-label hostname %s", (hostname) => {
+    // endsWith(".local") does not catch a bare "local".
+    expect(checkHostname(hostname)).toBeDefined();
+  });
 
   it("blocks an empty host", () => {
     expect(checkHostname("")).toBeDefined();

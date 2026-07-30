@@ -13,6 +13,11 @@ describe("isTrackingParam", () => {
     expect(isTrackingParam(name)).toBe(false);
   });
 
+  it("treats vmcid as an exact name rather than a prefix", () => {
+    expect(isTrackingParam("vmcid")).toBe(true);
+    expect(isTrackingParam("vmcid_other")).toBe(false);
+  });
+
   it.each(["ref", "s", "si", "source", "trk"])("only treats %s as a tracker in aggressive mode", (name) => {
     // These carry real meaning on some sites, so stripping them by default
     // would hand users broken URLs.

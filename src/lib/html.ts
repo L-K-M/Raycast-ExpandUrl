@@ -10,9 +10,17 @@
 const META_TAG = /<meta\b[^>]*>/gi;
 const TITLE_TAG = /<title\b[^>]*>([\s\S]*?)<\/title>/i;
 
-/** Reads one attribute out of a tag, handling double, single and bare values. */
+/**
+ * Reads one attribute out of a tag, handling double, single and bare values.
+ *
+ * The name must be preceded by whitespace or a slash rather than a `\b` word
+ * boundary. `-` is not a word character, so `\bcontent` happily matches inside
+ * `data-content` -- and because the regex takes the first match in the tag,
+ * `<meta http-equiv="refresh" data-content="junk" content="0;url=/x">` returned
+ * `junk` and the real redirect was missed entirely.
+ */
 function attribute(tag: string, name: string): string | undefined {
-  const pattern = new RegExp(`\\b${name}\\s*=\\s*(?:"([^"]*)"|'([^']*)'|([^\\s"'>]+))`, "i");
+  const pattern = new RegExp(`(?:^|[\\s/])${name}\\s*=\\s*(?:"([^"]*)"|'([^']*)'|([^\\s"'>]+))`, "i");
   const match = pattern.exec(tag);
   if (match === null) return undefined;
   return match[1] ?? match[2] ?? match[3];

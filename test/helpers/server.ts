@@ -139,7 +139,15 @@ export async function startTestServer(): Promise<TestServer> {
     socket.on("close", () => openSockets.delete(socket));
   });
 
-  await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
+  // Without the error listener a failed listen leaves this promise pending and
+  // the whole suite hangs with no diagnostic.
+  await new Promise<void>((resolve, reject) => {
+    server.once("error", reject);
+    server.listen(0, "127.0.0.1", () => {
+      server.off("error", reject);
+      resolve();
+    });
+  });
   const port = (server.address() as AddressInfo).port;
   const origin = `http://127.0.0.1:${port}`;
 

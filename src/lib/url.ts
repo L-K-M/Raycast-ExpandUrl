@@ -120,7 +120,6 @@ const FILE_EXTENSIONS = new Set([
   "dll",
   "jar",
   "war",
-  "png",
 ]);
 
 /** True when a scheme-less token looks more like a filename than a hostname. */

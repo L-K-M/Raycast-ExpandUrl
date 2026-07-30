@@ -78,6 +78,20 @@ describe("findMetaRefresh", () => {
     expect(findMetaRefresh(html)?.target).toBe("/next");
   });
 
+  /**
+   * `\b` treats `-` as a boundary, so `\bcontent` matched inside `data-content`.
+   * Because the regex takes the first match in the tag, the second case here
+   * returned "junk" and the real redirect was lost entirely.
+   */
+  it("does not mistake data-http-equiv for http-equiv", () => {
+    expect(findMetaRefresh(`<meta data-http-equiv="refresh" content="0; url=/evil">`)).toBeUndefined();
+  });
+
+  it("reads the real content attribute, not a data-content that precedes it", () => {
+    const html = `<meta http-equiv="refresh" data-content="junk" content="0; url=/next">`;
+    expect(findMetaRefresh(html)?.target).toBe("/next");
+  });
+
   it("returns undefined when there is no refresh at all", () => {
     expect(findMetaRefresh("<html><body>nothing here</body></html>")).toBeUndefined();
   });

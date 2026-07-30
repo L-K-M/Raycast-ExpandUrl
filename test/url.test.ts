@@ -66,6 +66,15 @@ describe("parseInput", () => {
   });
 });
 
+describe("filename detection", () => {
+  it("recognises the image extensions it claims to", () => {
+    // Guards against an entry being dropped while de-duplicating the list.
+    for (const name of ["a.png", "a.jpg", "a.gif", "a.svg", "a.webp"]) {
+      expect(parseInput(name).error, name).toBeDefined();
+    }
+  });
+});
+
 describe("trimUrlPunctuation", () => {
   it.each([
     ["https://example.com/a.", "https://example.com/a"],
