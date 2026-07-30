@@ -1,0 +1,65 @@
+{
+  "$schema": "https://www.raycast.com/schemas/extension.json",
+  "name": "expand-url",
+  "title": "Expand URL",
+  "description": "Expand shortened URLs one hop at a time and copy any link in the redirect chain.",
+  "icon": "icon.png",
+  "author": "L_K_M",
+  "license": "Unlicense",
+  "platforms": [
+    "macOS",
+    "Windows"
+  ],
+  "categories": [
+    "Web",
+    "Productivity"
+  ],
+  "keywords": [
+    "url",
+    "redirect",
+    "shortener",
+    "unshorten",
+    "tracking"
+  ],
+  "commands": [
+    {
+      "name": "expand-url",
+      "title": "Expand URL",
+      "description": "Expand a shortened URL and inspect every hop in its redirect chain.",
+      "mode": "view",
+      "arguments": [
+        {
+          "name": "url",
+          "type": "text",
+          "placeholder": "URL",
+          "required": false
+        }
+      ]
+    }
+  ],
+  "dependencies": {
+    "@raycast/api": "^1.104.23",
+    "@raycast/utils": "^2.2.7"
+  },
+  "devDependencies": {
+    "@raycast/eslint-config": "^2.2.0",
+    "@types/node": "22.19.17",
+    "@types/react": "19.0.10",
+    "eslint": "^9.39.0",
+    "prettier": "^3.9.6",
+    "typescript": "^5.9.3",
+    "vitest": "^4.1.10"
+  },
+  "scripts": {
+    "build": "ray build -e dist -o dist",
+    "dev": "ray develop",
+    "lint": "ray lint --relaxed",
+    "fix-lint": "ray lint --relaxed --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "publish": "npx @raycast/api@latest publish"
+  }
+}
