@@ -163,3 +163,54 @@ describe("displayHost", () => {
     expect(displayHost(new URL("https://wwwx.example.com/a"))).toBe("wwwx.example.com");
   });
 });
+/**
+ * `ChainExplorer` calls `parseInput` inside a promise handler that has a
+ * `.catch` attached for the clipboard read. If `parseInput` ever threw, that
+ * error would surface as "Could Not Read the Clipboard" — blaming the wrong
+ * component entirely. The current implementation cannot throw; this pins that,
+ * so the mis-attribution stays impossible rather than merely unlikely.
+ */
+describe("parseInput never throws", () => {
+  const hostile = [
+    "",
+    "   ",
+    "\u0000",
+    "http://",
+    "https://",
+    "://",
+    "http://[",
+    "http://[::1",
+    "%",
+    "%zz",
+    "%%%%",
+    "http://%zz/",
+    "a".repeat(10_000),
+    "http://" + "a".repeat(10_000),
+    "http://exa mple.com",
+    "\n\t\r",
+    "😀",
+    "http://😀.example",
+    "javascript:alert(1)",
+    "data:text/html;base64,,,,",
+    "//",
+    "..",
+    "http://user:pass@@example.com",
+    "http://:80",
+    "http://example.com:99999999",
+    "\\\\server\\share",
+  ];
+
+  it.each(hostile)("survives %j", (input) => {
+    expect(() => parseInput(input)).not.toThrow();
+  });
+
+  it("always returns either a url or an error, never neither", () => {
+    for (const input of hostile) {
+      const result = parseInput(input);
+      expect(
+        result.url !== undefined || result.error !== undefined,
+        `parseInput(${JSON.stringify(input)}) returned neither a url nor an error`,
+      ).toBe(true);
+    }
+  });
+});
