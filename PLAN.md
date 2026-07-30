@@ -162,10 +162,10 @@ because copying an intermediate URL is the whole point of the extension.
 | `readClipboard` | checkbox | `true` | Prefill the search bar from the clipboard. Privacy opt-out. |
 | `maxHops` | textfield | `20` | Runaway/loop guard. |
 | `timeoutMs` | textfield | `10000` | Per-request timeout. |
-| `userAgent` | dropdown (`chrome`, `safari`, `raycast`) | `chrome` | Many shorteners 403 unknown agents. Section 3.5. |
-| `followMetaRefresh` | checkbox | `true` | Section 3.3. |
-| `blockPrivateHosts` | checkbox | `true` | Section 3.6. |
-| `stripAggressively` | checkbox | `false` | Section 3.4. |
+| `userAgent` | dropdown (`chrome`, `safari`, `raycast`) | `chrome` | Many shorteners 403 unknown agents. Section 3.6. |
+| `followMetaRefresh` | checkbox | `true` | Section 3.4. |
+| `blockPrivateHosts` | checkbox | `true` | Section 3.7. |
+| `stripAggressively` | checkbox | `false` | Section 3.5. |
 | `keepHistory` | checkbox | `true` | Privacy opt-out. |
 
 ---
@@ -192,7 +192,8 @@ src/
     url.ts                    # parse / normalise / extract-from-text
     tracking.ts               # tracking-parameter classification & stripping
     html.ts                   # meta-refresh + <title> extraction
-    guards.ts                 # scheme + private-host checks
+    guards.ts                 # scheme, hostname and IP-range policy
+    transport.ts              # node:https request w/ guarded lookup + capped read
     expand.ts                 # resolveHop() / expandChain() async generator
     format.ts                 # chain → markdown / plain text
   preferences.ts              # typed, validated preference access
@@ -242,23 +243,40 @@ export interface Chain {
 }
 ```
 
-### 3.3 The hop resolution algorithm
+### 3.3 The transport
+
+Requests are issued with **`node:https` / `node:http` directly**, not `fetch`.
+Three properties make this the right primitive here:
+
+- `http.request` accepts a **custom `lookup`** function, which lets us validate
+  the resolved IP address at the instant the socket is opened, closing the SSRF
+  TOCTOU window entirely (§3.7). `fetch` has no equivalent without taking on
+  `undici` as a direct dependency and risking a version skew against the
+  built-in one.
+- It does not follow redirects at all, so "do not follow redirects" is the
+  default rather than an opt-out we could forget.
+- The response is a stream we own, so we can stop reading after *n* bytes and
+  destroy the socket rather than buffering a whole response.
+
+Bodies are requested with `Accept-Encoding: identity`; if a server compresses
+anyway, the stream is piped through the matching `node:zlib` decoder before
+parsing.
+
+### 3.4 The hop resolution algorithm
 
 `resolveHop(url, options, signal)` — one URL in, one `HopResult` out:
 
-1. **Guard** the URL (§3.6). A rejected URL yields a terminal hop carrying the
+1. **Guard** the URL (§3.7). A rejected URL yields a terminal hop carrying the
    reason; it never throws.
-2. **`HEAD`** with `redirect: "manual"`, `signal: AbortSignal.any([userSignal,
-   AbortSignal.timeout(timeoutMs)])`. Verified: Node/undici returns the real 3xx
-   response with a readable `location` header (unlike browsers, which return an
-   opaque redirect).
+2. **`HEAD`**, with the connect-time address check armed and a `timeoutMs`
+   deadline covering DNS, connect, and response headers.
 3. **3xx + `location`** → next URL is `new URL(location, currentUrl)`, resolving
    relative redirects. `via: "http"`. Done.
 4. **405 / 501 / 403, or 2xx with meta-refresh checking enabled** → retry with
    `GET`. Many hosts reject `HEAD` outright, and meta refresh needs a body.
-   `GET` bodies are read through a **byte-capped reader** (default 64 KiB) and
-   the stream is then cancelled — we never download a 4 GB ISO to look for a
-   `<meta>` tag.
+   `GET` bodies are read through a **byte-capped reader** (default 64 KiB),
+   after which the socket is destroyed — we never download a 4 GB ISO to look
+   for a `<meta>` tag.
 5. **HTML body** → extract `<meta http-equiv="refresh" content="0; url=…">`
    (delay ≤ `metaRefreshMaxDelay`, default 5 s) and `<title>`. A qualifying
    refresh yields `via: "meta-refresh"`.
@@ -273,7 +291,7 @@ what step mode needs. One implementation serves both modes.
 Termination conditions: terminal response · `hops.length >= maxHops` · repeated
 normalised URL (loop) · abort · guard rejection.
 
-### 3.4 Tracking-parameter handling
+### 3.5 Tracking-parameter handling
 
 `tracking.ts` classifies query parameters against two tiers:
 
@@ -291,7 +309,7 @@ some sites; stripping them by default would produce broken URLs.
 parameter order for everything it keeps and leaving the URL untouched when
 nothing matches (no gratuitous re-encoding).
 
-### 3.5 User agent
+### 3.6 User agent
 
 Shorteners and CDNs routinely 403 unrecognised agents, so a plausible desktop
 browser UA is required for the tool to work at all. The preference makes this
@@ -300,27 +318,56 @@ for users who prefer not to spoof. Default: Chrome, because it is what actually
 works. `Accept: */*`, `Accept-Language: en-US,en;q=0.9`, no cookies sent, no
 cookies stored.
 
-### 3.6 Safety guards
+### 3.7 Safety guards
 
-The extension follows **attacker-controllable** redirects, so the target of hop
-*n+1* is chosen by whoever controls hop *n*. Guards, in `guards.ts`:
+The extension follows **attacker-controllable** redirects: the target of hop
+*n+1* is chosen by whoever controls hop *n*. That makes this an SSRF engine
+unless it is guarded deliberately. Guards live in `guards.ts`.
 
-- **Scheme allow-list**: `http:` and `https:` only. A redirect to
-  `file:`/`javascript:`/`data:` terminates the chain with a visible reason.
-- **Private-host blocking** (default on): before each request, resolve the
-  hostname with `node:dns/promises` and reject loopback, link-local
-  (`169.254/16`, `fe80::/10`), private (`10/8`, `172.16/12`, `192.168/16`,
-  `fc00::/7`), CGNAT (`100.64/10`), and unspecified addresses, plus literal-IP
-  and `localhost` / `*.local` / `*.internal` forms. This blocks the classic
-  "public shortener redirects to `http://169.254.169.254/`" pivot.
-  A TOCTOU window remains between our resolution and undici's — documented in
-  `AGENTS.md` as a known, accepted limitation rather than papered over.
-- **Response caps**: 64 KiB read ceiling, per-request timeout, `maxHops` ceiling,
-  loop detection.
-- **No credential forwarding**: `Authorization`/`Cookie` are never set, so
-  nothing is leaked to hop *n+1*.
+**Scheme allow-list.** `http:` and `https:` only. A redirect to
+`file:` / `javascript:` / `data:` terminates the chain with a visible reason.
 
-### 3.7 Toolchain
+**Address blocking at connect time** (default on). The check runs inside the
+custom `lookup` passed to `http.request` (§3.3), so it sees the exact addresses
+the socket is about to use. Nothing is resolved once and trusted later, which
+means **DNS rebinding cannot bypass it** — there is no window between the check
+and the connect for the answer to change. `lookup` is called with `all: true`,
+every returned address is validated, and a single bad address rejects the whole
+connection rather than being filtered out (a host that resolves to both a public
+and a private address is not a host we want to talk to).
+
+Rejected ranges, evaluated against the **parsed binary address**, never against
+its string form:
+
+| Family | Blocked |
+|---|---|
+| IPv4 | `0.0.0.0/8`, `10/8`, `100.64/10` (CGNAT), `127/8`, `169.254/16` (link-local, incl. cloud metadata), `172.16/12`, `192.0.0/24`, `192.168/16`, `198.18/15`, multicast `224/4`, reserved `240/4` |
+| IPv6 | `::`, `::1`, `fc00::/7` (ULA), `fe80::/10` (link-local), `ff00::/8` (multicast) |
+| IPv6 embedding IPv4 | `::ffff:a.b.c.d` (IPv4-mapped), `64:ff9b::/96` (NAT64), and `2002::/16` (6to4) are **unwrapped to their embedded IPv4 address and re-checked against the IPv4 table** |
+
+The IPv4-mapped case deserves its own note because it is the easy one to get
+wrong: `new URL("http://[::ffff:127.0.0.1]/")` yields hostname
+`"[::ffff:7f00:1]"` — brackets retained, and the embedded IPv4 re-encoded as
+hex. So a string comparison against `"::ffff:127.0.0.1"` matches nothing, and
+`net.isIP()` returns `0` until the brackets are stripped. Both are handled
+explicitly, and both get a regression test.
+
+Conversely, **alternate IPv4 literal encodings need no special handling**, and
+the plan deliberately does not add any: WHATWG `URL` already normalises them
+during parsing. Verified — `http://2130706433/`, `http://0x7f000001/`, and
+`http://0177.0.0.1/` all yield hostname `127.0.0.1`. Hand-rolling a second
+decimal/octal/hex parser on top of that would add bypass surface, not remove it.
+
+**Hostname forms.** `localhost`, `*.localhost`, `*.local`, `*.internal`, and the
+empty host are rejected before any resolution is attempted.
+
+**Response caps.** 64 KiB read ceiling, per-request timeout, `maxHops` ceiling,
+loop detection on normalised URLs.
+
+**No credential forwarding.** `Authorization` and `Cookie` are never set, so
+hop *n+1* receives nothing from hop *n*.
+
+### 3.8 Toolchain
 
 Verified working headless on Linux CI (`@raycast/api` ships a `linux-x64` `ray`
 binary; neither `lint` nor `build` requires the Raycast app or a login):
@@ -338,7 +385,7 @@ binary; neither `lint` nor `build` requires the Raycast app or a login):
 ESLint 9 flat config (`eslint.config.mjs`) extending `@raycast/eslint-config`;
 Prettier 3; TypeScript 5 `strict`.
 
-### 3.8 CI/CD
+### 3.9 CI/CD
 
 `.github/workflows/ci.yml` — on push and PR, `ubuntu-latest`, Node 22:
 `npm ci` → `format` → `lint` → `typecheck` → `test` → `build`. Concurrency-grouped
@@ -366,7 +413,7 @@ One PR per step, against `main`, each awaiting GLM review before merge.
 |---|---|---|
 | 1 | **This plan** | `PLAN.md` merged. |
 | 2 | **Scaffolding & CI** | Manifest, tsconfig, ESLint/Prettier, generated 512×512 icon, vitest, CI workflow, a command that renders. `lint`+`build`+`test` green. |
-| 3 | **Expansion engine** | `lib/{types,url,tracking,html,guards,expand,format}.ts` + thorough vitest suite against a local `http.Server`. No UI change. |
+| 3 | **Expansion engine** | `lib/{types,url,tracking,html,guards,transport,expand,format}.ts` + thorough vitest suite against a local `http.Server`, including regression tests for every blocked IP range and for the IPv4-mapped IPv6 and bracketed-hostname forms in §3.7. No UI change. |
 | 4 | **Chain view** | `expand-url` command: streaming full-chain expansion, chain list, detail metadata, copy/open actions. |
 | 5 | **Step mode & preferences** | Step-by-step expansion, runtime mode toggle, stop/restart, all preferences wired and validated. |
 | 6 | **Clipboard command & history** | `expand-clipboard-url`, `LocalStorage` recents in the empty state. |
