@@ -100,6 +100,11 @@ Each of these cost a debugging cycle and has a regression test. Do not
   A superseded run can still be parked on an `await` when a new one starts; a
   plain boolean makes the new run a no-op, leaving the spinner up and nothing
   expanding.
+- **Raycast supplies `""` for a blank optional argument, not `undefined`.**
+  `raycast-env.d.ts` types it as `string`, so `arguments.url ?? fallbackText`
+  never falls through and `fallbackText` becomes unreachable — which silently
+  disables the fallback-command path. Use `pickSeedText` (`lib/launch.ts`),
+  which treats empty and whitespace as "not supplied".
 - **`@raycast/no-ambiguous-platform-shortcut` only inspects inline object
   literals.** Any helper that returns `{ modifiers, key }` suppresses the rule
   everywhere it is used. `HopActions.tsx`'s helper emits
