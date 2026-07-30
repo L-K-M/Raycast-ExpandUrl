@@ -1,8 +1,16 @@
+import { existsSync } from "node:fs";
 import { readdir, readFile } from "node:fs/promises";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 
 const root = path.resolve(__dirname, "..");
+
+/** Resolves a manifest command name to its entry point, as Raycast would. */
+function commandEntry(name: string): string | undefined {
+  return [".tsx", ".ts", ".jsx", ".js"]
+    .map((extension) => path.join(root, "src", `${name}${extension}`))
+    .find((candidate) => existsSync(candidate));
+}
 
 async function sourceFilesUnder(directory: string): Promise<string[]> {
   const entries = await readdir(directory, { withFileTypes: true });
@@ -92,5 +100,58 @@ describe("documentation keeps up with the manifest", () => {
       .map((command) => command.name);
 
     expect(undocumented, `undocumented commands: ${undocumented.join(", ")}`).toEqual([]);
+  });
+});
+
+/**
+ * The design commitment in PLAN.md §1 is that the extension never collapses a
+ * chain to its destination. That was violated once already: the clipboard
+ * command shipped as `no-view`, expanding fully and copying the last URL — and
+ * because it was the command reachable by name from root search, the one thing
+ * the extension exists to avoid became the path most users would take.
+ */
+describe("no command collapses the chain", () => {
+  it("declares every command as a view", async () => {
+    const manifest = JSON.parse(await readFile(path.join(root, "package.json"), "utf8")) as {
+      commands: { name: string; mode: string }[];
+    };
+
+    const headless = manifest.commands.filter((command) => command.mode !== "view").map((command) => command.name);
+
+    expect(
+      headless,
+      `these commands cannot show a chain: ${headless.join(", ")}. A no-view command can only ` +
+        "report a destination, which is the behaviour PLAN.md rules out.",
+    ).toEqual([]);
+  });
+
+  it("routes every command through the shared chain explorer", async () => {
+    const manifest = JSON.parse(await readFile(path.join(root, "package.json"), "utf8")) as {
+      commands: { name: string }[];
+    };
+
+    for (const { name } of manifest.commands) {
+      // Resolved rather than assumed, so renaming a command fails this
+      // assertion with a useful message instead of throwing ENOENT.
+      const entry = commandEntry(name);
+      expect(entry, `no entry point on disk for command "${name}"`).toBeDefined();
+      const source = await readFile(entry as string, "utf8");
+      // Match the JSX tag, not the identifier: `toContain("ChainExplorer")`
+      // is satisfied by the import alone, so removing the render and leaving a
+      // stale import would have passed.
+      expect(source, `${name} should render <ChainExplorer />`).toMatch(/<ChainExplorer[\s/>]/);
+    }
+  });
+
+  it("keeps the clipboard command reading the clipboard unconditionally", async () => {
+    // `alwaysReadClipboard` is the only thing separating this command from
+    // `expand-url`. Dropping it as a simplification would leave two identical
+    // commands and quietly delete this one's reason to exist -- and every other
+    // assertion here would stay green.
+    const entry = commandEntry("expand-clipboard-url");
+    expect(entry, "expand-clipboard-url has no entry point").toBeDefined();
+
+    const source = await readFile(entry as string, "utf8");
+    expect(source, "expand-clipboard-url must pass alwaysReadClipboard").toMatch(/alwaysReadClipboard/);
   });
 });
