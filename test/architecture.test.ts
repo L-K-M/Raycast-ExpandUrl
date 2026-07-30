@@ -1,3 +1,4 @@
+import { existsSync } from "node:fs";
 import { readdir, readFile } from "node:fs/promises";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
@@ -117,10 +118,21 @@ describe("no command collapses the chain", () => {
     ).toEqual([]);
   });
 
-  it("routes both commands through the shared chain explorer", async () => {
-    for (const entry of ["expand-url.tsx", "expand-clipboard-url.tsx"]) {
-      const source = await readFile(path.join(root, "src", entry), "utf8");
-      expect(source, `${entry} should render ChainExplorer`).toContain("ChainExplorer");
+  it("routes every command through the shared chain explorer", async () => {
+    const manifest = JSON.parse(await readFile(path.join(root, "package.json"), "utf8")) as {
+      commands: { name: string }[];
+    };
+
+    for (const { name } of manifest.commands) {
+      // Resolved rather than assumed, so renaming a command fails this
+      // assertion with a useful message instead of throwing ENOENT.
+      const entry = [".tsx", ".ts", ".jsx", ".js"]
+        .map((extension) => path.join(root, "src", `${name}${extension}`))
+        .find((candidate) => existsSync(candidate));
+
+      expect(entry, `no entry point on disk for command "${name}"`).toBeDefined();
+      const source = await readFile(entry as string, "utf8");
+      expect(source, `${name} should render ChainExplorer`).toContain("ChainExplorer");
     }
   });
 });

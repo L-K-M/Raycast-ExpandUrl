@@ -34,12 +34,23 @@ export function ChainExplorer({ initialText = "", alwaysReadClipboard = false }:
 
   const [searchText, setSearchText] = useState(initialText);
   const [isShowingDetail, setIsShowingDetail] = useState(true);
+  /**
+   * Why the clipboard produced nothing, when the user explicitly asked for the
+   * clipboard. Only set for the clipboard command: `Expand URL` reads the
+   * clipboard as an unasked-for convenience, and a convenience that failed
+   * should stay quiet.
+   */
+  const [clipboardProblem, setClipboardProblem] = useState<string | undefined>(undefined);
 
   /** Guards the one-shot seed-and-autostart so a re-render cannot repeat it. */
   const hasSeeded = useRef(initialText.length > 0);
   const hasAutoStarted = useRef(false);
 
   const parsed = useMemo(() => parseInput(searchText), [searchText]);
+
+  // Once there is something in the search bar, the clipboard is no longer the
+  // story.
+  const clipboardNotice = searchText.trim().length === 0 ? clipboardProblem : undefined;
   const { chain, isLoading, canExpandMore, start, expandNext, expandAll, stop, reset } = expansion;
 
   useEffect(() => {
@@ -60,12 +71,21 @@ export function ChainExplorer({ initialText = "", alwaysReadClipboard = false }:
 
     let cancelled = false;
     void Clipboard.readText().then((text) => {
-      if (cancelled || text === undefined) return;
+      if (cancelled) return;
       // parseInput trims internally, but trimming once here keeps the checked
       // value and the stored value visibly the same thing.
-      const trimmed = text.trim();
-      if (parseInput(trimmed).url === undefined) return;
-      setSearchText(trimmed);
+      const trimmed = (text ?? "").trim();
+
+      if (parseInput(trimmed).url !== undefined) {
+        setSearchText(trimmed);
+        return;
+      }
+
+      // Running "Expand URL in Clipboard" and getting a blank screen reads as a
+      // broken extension rather than an empty clipboard, so say which it was.
+      if (alwaysReadClipboard) {
+        setClipboardProblem(trimmed.length === 0 ? "Clipboard Is Empty" : "No URL in the Clipboard");
+      }
     });
     return () => {
       cancelled = true;
@@ -204,13 +224,17 @@ export function ChainExplorer({ initialText = "", alwaysReadClipboard = false }:
       {chain === undefined && !showHistory && (
         <List.EmptyView
           icon={Icon.Link}
-          title={searchText.trim().length === 0 ? "Paste a URL to Expand" : (parsed.error ?? "Ready")}
+          title={
+            clipboardNotice ?? (searchText.trim().length === 0 ? "Paste a URL to Expand" : (parsed.error ?? "Ready"))
+          }
           description={
-            searchText.trim().length === 0
-              ? "Every hop in the redirect chain stays visible and copyable."
-              : parsed.error !== undefined
-                ? "Enter an http or https URL."
-                : "Press ⏎ to expand."
+            clipboardNotice !== undefined
+              ? "Copy a URL and run this command again, or paste one here."
+              : searchText.trim().length === 0
+                ? "Every hop in the redirect chain stays visible and copyable."
+                : parsed.error !== undefined
+                  ? "Enter an http or https URL."
+                  : "Press ⏎ to expand."
           }
         />
       )}
