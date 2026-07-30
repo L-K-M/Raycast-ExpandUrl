@@ -74,8 +74,11 @@ export function ChainExplorer({ initialText = "", alwaysReadClipboard = false }:
     hasSeeded.current = true;
 
     let cancelled = false;
+    let completed = false;
+
     void Clipboard.readText().then((text) => {
       if (cancelled) return;
+      completed = true;
       // parseInput trims internally, but trimming once here keeps the checked
       // value and the stored value visibly the same thing.
       const trimmed = (text ?? "").trim();
@@ -93,6 +96,16 @@ export function ChainExplorer({ initialText = "", alwaysReadClipboard = false }:
     });
     return () => {
       cancelled = true;
+      // Release the once-only guard if the read never landed, so a re-mounted
+      // effect can retry. React Strict Mode double-invokes effects: without
+      // this, the first read is cancelled by the cleanup and the second
+      // invocation short-circuits on `hasSeeded`, so the clipboard is never
+      // read at all. Raycast does not currently use Strict Mode, which is
+      // exactly why this would go unnoticed until it did.
+      //
+      // Guarded on `completed` so a finished read still blocks re-seeding,
+      // which would otherwise overwrite whatever the user has since typed.
+      if (!completed) hasSeeded.current = false;
     };
   }, [alwaysReadClipboard, settings.readClipboard]);
 
