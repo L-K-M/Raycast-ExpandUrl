@@ -99,7 +99,15 @@ function readCapped(
     stream.on("end", () => finish(false));
     // A decompression failure or an aborted socket still leaves us whatever we
     // managed to read, which is usually enough to find a <meta> tag.
-    stream.on("error", () => finish(true));
+    //
+    // `raw` must be destroyed explicitly here: on the decompression path
+    // `stream` is a zlib transform, not the response, so failing it leaves the
+    // socket open until the server or TCP gives up. On the identity path
+    // `stream === raw` and the destroy is a harmless no-op.
+    stream.on("error", () => {
+      raw.destroy();
+      finish(true);
+    });
     raw.on("error", () => finish(true));
   });
 }

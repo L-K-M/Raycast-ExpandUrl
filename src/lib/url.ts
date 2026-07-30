@@ -159,6 +159,13 @@ export function parseInput(text: string): ParsedInput {
         : undefined;
 
   if (candidate === undefined) {
+    // `file:///etc/passwd` is a URL, just not one we can expand. Saying so
+    // beats "that does not look like a URL", which is both wrong and unhelpful.
+    // The negative lookahead keeps `localhost:8080/x` from reading as a scheme.
+    const scheme = /^([a-z][a-z0-9+.-]*):(?!\d)/i.exec(trimmed)?.[1]?.toLowerCase();
+    if (scheme !== undefined && scheme !== "http" && scheme !== "https") {
+      return { error: `Only http and https URLs can be expanded, not ${scheme}:` };
+    }
     return { error: "That does not look like a URL" };
   }
 

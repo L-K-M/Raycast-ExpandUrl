@@ -59,10 +59,22 @@ describe("parseInput", () => {
     expect(parseInput("notes.txt/page").url?.href).toBe("https://notes.txt/page");
   });
 
-  it("preserves a non-http scheme so the guard can report it properly", () => {
-    // parseInput's job is parsing, not policy. checkUrl rejects the scheme, and
-    // reporting "file: is not supported" beats "that is not a URL".
-    expect(parseInput("file:///etc/passwd").error).toBeDefined();
+  it.each(["file:///etc/passwd", "javascript:alert(1)", "data:text/html,x", "ftp://example.com/"])(
+    "rejects %s by naming the scheme, not by calling it not-a-URL",
+    (input) => {
+      // These are URLs; they just are not expandable. parseInput rejects them
+      // here rather than letting checkUrl do it later, so the search bar can say
+      // something specific before any request is contemplated.
+      const { url, error } = parseInput(input);
+      expect(url).toBeUndefined();
+      expect(error).toMatch(/only http and https/i);
+    },
+  );
+
+  it("does not mistake a port for a scheme", () => {
+    // `localhost:8080/x` must not be reported as an unsupported "localhost:"
+    // scheme.
+    expect(parseInput("localhost:8080/x").error).toBe("That does not look like a URL");
   });
 });
 

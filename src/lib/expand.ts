@@ -155,8 +155,11 @@ function describeError(error: unknown): string {
     const code = (error as NodeJS.ErrnoException).code;
     switch (code) {
       case "ENOTFOUND":
-      case "EAI_AGAIN":
         return "host not found";
+      case "EAI_AGAIN":
+        // Transient resolver failure, not a missing name. Reporting it as
+        // "host not found" tells the user the domain is dead when it is not.
+        return "DNS lookup temporarily failed";
       case "ECONNREFUSED":
         return "connection refused";
       case "ECONNRESET":
