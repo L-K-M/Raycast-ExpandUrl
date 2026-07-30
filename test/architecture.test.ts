@@ -5,6 +5,13 @@ import { describe, expect, it } from "vitest";
 
 const root = path.resolve(__dirname, "..");
 
+/** Resolves a manifest command name to its entry point, as Raycast would. */
+function commandEntry(name: string): string | undefined {
+  return [".tsx", ".ts", ".jsx", ".js"]
+    .map((extension) => path.join(root, "src", `${name}${extension}`))
+    .find((candidate) => existsSync(candidate));
+}
+
 async function sourceFilesUnder(directory: string): Promise<string[]> {
   const entries = await readdir(directory, { withFileTypes: true });
   const files = await Promise.all(
@@ -126,10 +133,7 @@ describe("no command collapses the chain", () => {
     for (const { name } of manifest.commands) {
       // Resolved rather than assumed, so renaming a command fails this
       // assertion with a useful message instead of throwing ENOENT.
-      const entry = [".tsx", ".ts", ".jsx", ".js"]
-        .map((extension) => path.join(root, "src", `${name}${extension}`))
-        .find((candidate) => existsSync(candidate));
-
+      const entry = commandEntry(name);
       expect(entry, `no entry point on disk for command "${name}"`).toBeDefined();
       const source = await readFile(entry as string, "utf8");
       // Match the JSX tag, not the identifier: `toContain("ChainExplorer")`
@@ -137,5 +141,17 @@ describe("no command collapses the chain", () => {
       // stale import would have passed.
       expect(source, `${name} should render <ChainExplorer />`).toMatch(/<ChainExplorer[\s/>]/);
     }
+  });
+
+  it("keeps the clipboard command reading the clipboard unconditionally", async () => {
+    // `alwaysReadClipboard` is the only thing separating this command from
+    // `expand-url`. Dropping it as a simplification would leave two identical
+    // commands and quietly delete this one's reason to exist -- and every other
+    // assertion here would stay green.
+    const entry = commandEntry("expand-clipboard-url");
+    expect(entry, "expand-clipboard-url has no entry point").toBeDefined();
+
+    const source = await readFile(entry as string, "utf8");
+    expect(source, "expand-clipboard-url must pass alwaysReadClipboard").toMatch(/alwaysReadClipboard/);
   });
 });
