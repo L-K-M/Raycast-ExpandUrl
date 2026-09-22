@@ -1,5 +1,8 @@
 # Expand URL
 
+> [!IMPORTANT]
+> LLM disclosure: This codebase was written with substantial help from large language models: AI coding agents working from the [`AGENTS.md`](AGENTS.md) brief in this repo.
+
 A Raycast extension that expands shortened URLs **one hop at a time**, showing
 you the whole redirect chain instead of just where it ends up.
 
